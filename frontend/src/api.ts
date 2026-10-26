@@ -1,5 +1,9 @@
 import axios from 'axios'
-export const api = axios.create({ baseURL: '/api/v1', withCredentials: true, headers: { 'Content-Type': 'application/json' } })
+export const api = axios.create({
+  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api/v1`,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
 let csrfToken: string | undefined
 export async function refreshCsrfToken() { await api.get('/auth/csrf'); const cookie = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=').slice(1).join('='); csrfToken = cookie ? decodeURIComponent(cookie) : undefined }
 api.interceptors.request.use(async (config) => { if (config.method?.toLowerCase() !== 'get' && !csrfToken) { await axios.get('/api/v1/auth/csrf', { withCredentials: true }); const issued = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=').slice(1).join('='); csrfToken = issued ? decodeURIComponent(issued) : undefined } const cookieToken = document.cookie.split('; ').find(row => row.startsWith('XSRF-TOKEN='))?.split('=').slice(1).join('='); const csrf = csrfToken ?? (cookieToken ? decodeURIComponent(cookieToken) : undefined); if (csrf) config.headers['X-XSRF-TOKEN'] = csrf; return config })
