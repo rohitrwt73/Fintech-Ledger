@@ -62,7 +62,7 @@ public class SecurityConfig {
         http.csrf(c -> c.csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse()).csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
           .cors(c -> c.configurationSource(req -> { var cors = new CorsConfiguration(); cors.setAllowedOrigins(java.util.List.of(frontendOrigin)); cors.setAllowedMethods(java.util.List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS")); cors.setAllowedHeaders(java.util.List.of("Content-Type","X-XSRF-TOKEN","Idempotency-Key")); cors.setAllowCredentials(true); return cors; }))
           .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-          .authorizeHttpRequests(a -> a.requestMatchers("/api/v1/auth/register","/api/v1/auth/login","/api/v1/auth/csrf","/actuator/health","/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll().requestMatchers("/api/v1/admin/**").hasRole("ADMIN").anyRequest().authenticated())
+          .authorizeHttpRequests(a -> a.requestMatchers("/", "/api/v1/auth/register","/api/v1/auth/login","/api/v1/auth/csrf","/actuator/health","/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll().requestMatchers("/api/v1/admin/**").hasRole("ADMIN").anyRequest().authenticated())
           .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
