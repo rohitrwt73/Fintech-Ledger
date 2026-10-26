@@ -1,0 +1,11 @@
+target/
+node_modules/
+dist/
+.env
+.idea/
+.vscode/
+*.log
+coverage/
+frontend/.vite/
+frontend/.npm-cache/
+

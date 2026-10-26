@@ -1,0 +1,10 @@
+package com.fintechledger.audit;
+import java.util.*;import org.springframework.jdbc.core.JdbcTemplate;import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/v1/admin")public class AdminController{
+ private final JdbcTemplate jdbc;public AdminController(JdbcTemplate jdbc){this.jdbc=jdbc;}
+ @GetMapping("/users")List<Map<String,Object>> users(@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="25")int size){return jdbc.queryForList("select id,email,full_name as \"fullName\",role,created_at as \"createdAt\" from app_users order by created_at desc limit ? offset ?",bounded(size),Math.max(page,0)*bounded(size));}
+ @GetMapping("/accounts")List<Map<String,Object>> accounts(@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="25")int size){return jdbc.queryForList("select a.id,a.account_number as \"accountNumber\",a.currency,a.status,a.balance,a.created_at as \"createdAt\",u.email as owner from accounts a left join app_users u on u.id=a.owner_id order by a.created_at desc limit ? offset ?",bounded(size),Math.max(page,0)*bounded(size));}
+ @GetMapping("/transfers")List<Map<String,Object>> transfers(@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="25")int size){return jdbc.queryForList("select t.id,t.reference,t.amount,t.currency,t.status,t.created_at as \"createdAt\",u.email as actor from transfers t join app_users u on u.id=t.initiated_by order by t.created_at desc limit ? offset ?",bounded(size),Math.max(page,0)*bounded(size));}
+ @GetMapping("/audit-events")List<Map<String,Object>> events(@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="25")int size){return jdbc.queryForList("select id,actor_id as \"actorId\",action,resource_type as \"resourceType\",resource_id as \"resourceId\",metadata,created_at as \"createdAt\" from audit_events order by created_at desc limit ? offset ?",bounded(size),Math.max(page,0)*bounded(size));}
+ private int bounded(int size){return Math.max(1,Math.min(size,100));}
+}
