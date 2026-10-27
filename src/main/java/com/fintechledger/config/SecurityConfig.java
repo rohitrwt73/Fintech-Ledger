@@ -75,14 +75,12 @@ public class SecurityConfig {
     }
     public static String issue(SecretKey key, String subject, String role) { return Jwts.builder().subject(subject).claim("role", role).issuedAt(new Date()).expiration(new Date(System.currentTimeMillis()+86400000)).signWith(key).compact(); }
 
+
     private static final class SpaCsrfTokenRequestHandler
             implements CsrfTokenRequestHandler {
 
-        private final CsrfTokenRequestHandler plain =
+        private final CsrfTokenRequestHandler delegate =
                 new CsrfTokenRequestAttributeHandler();
-
-        private final CsrfTokenRequestHandler xor =
-                new XorCsrfTokenRequestAttributeHandler();
 
         @Override
         public void handle(
@@ -90,7 +88,7 @@ public class SecurityConfig {
                 HttpServletResponse response,
                 Supplier<CsrfToken> csrfToken) {
 
-            xor.handle(request, response, csrfToken);
+            delegate.handle(request, response, csrfToken);
             csrfToken.get();
         }
 
@@ -99,15 +97,8 @@ public class SecurityConfig {
                 HttpServletRequest request,
                 CsrfToken csrfToken) {
 
-            String header = request.getHeader(csrfToken.getHeaderName());
-
-            if (StringUtils.hasText(header)) {
-                // The frontend sends the masked token returned by the JSON endpoint.
-                // Decode it before comparing it with the raw cookie token.
-                return xor.resolveCsrfTokenValue(request, csrfToken);
-            }
-
-            return xor.resolveCsrfTokenValue(request, csrfToken);
+            return delegate.resolveCsrfTokenValue(request, csrfToken);
         }
     }
+
 }
