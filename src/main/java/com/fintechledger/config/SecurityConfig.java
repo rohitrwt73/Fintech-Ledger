@@ -75,16 +75,39 @@ public class SecurityConfig {
     }
     public static String issue(SecretKey key, String subject, String role) { return Jwts.builder().subject(subject).claim("role", role).issuedAt(new Date()).expiration(new Date(System.currentTimeMillis()+86400000)).signWith(key).compact(); }
 
-    private static final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
-        private final CsrfTokenRequestHandler plain = new CsrfTokenRequestAttributeHandler();
-        private final CsrfTokenRequestHandler xor = new XorCsrfTokenRequestAttributeHandler();
-        @Override public void handle(HttpServletRequest request, HttpServletResponse response, Supplier<CsrfToken> csrfToken) {
+    private static final class SpaCsrfTokenRequestHandler
+            implements CsrfTokenRequestHandler {
+
+        private final CsrfTokenRequestHandler plain =
+                new CsrfTokenRequestAttributeHandler();
+
+        private final CsrfTokenRequestHandler xor =
+                new XorCsrfTokenRequestAttributeHandler();
+
+        @Override
+        public void handle(
+                HttpServletRequest request,
+                HttpServletResponse response,
+                Supplier<CsrfToken> csrfToken) {
+
             xor.handle(request, response, csrfToken);
-            csrfToken.get(); // Materialize the deferred token so the cookie is written for SPA clients.
+            csrfToken.get();
         }
-        @Override public String resolveCsrfTokenValue(HttpServletRequest request, CsrfToken csrfToken) {
+
+        @Override
+        public String resolveCsrfTokenValue(
+                HttpServletRequest request,
+                CsrfToken csrfToken) {
+
             String header = request.getHeader(csrfToken.getHeaderName());
-            return StringUtils.hasText(header) ? plain.resolveCsrfTokenValue(request, csrfToken) : xor.resolveCsrfTokenValue(request, csrfToken);
+
+            if (StringUtils.hasText(header)) {
+                // The frontend sends the masked token returned by the JSON endpoint.
+                // Decode it before comparing it with the raw cookie token.
+                return xor.resolveCsrfTokenValue(request, csrfToken);
+            }
+
+            return xor.resolveCsrfTokenValue(request, csrfToken);
         }
     }
 }
