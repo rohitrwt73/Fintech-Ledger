@@ -27,10 +27,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
-import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.*;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -59,7 +56,17 @@ public class SecurityConfig {
                 chain.doFilter(request, response);
             }
         };
-        http.csrf(c -> c.csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse()).csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
+        http.csrf(c -> {
+                    var repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+                    repository.setCookieCustomizer(cookie -> cookie
+                            .secure(true)
+                            .sameSite("None")
+                            .path("/")
+                    );
+
+                    c.csrfTokenRepository(repository)
+                            .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler());
+                })
           .cors(c -> c.configurationSource(req -> { var cors = new CorsConfiguration(); cors.setAllowedOrigins(java.util.List.of(frontendOrigin)); cors.setAllowedMethods(java.util.List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS")); cors.setAllowedHeaders(java.util.List.of("Content-Type","X-XSRF-TOKEN","Idempotency-Key")); cors.setAllowCredentials(true); return cors; }))
           .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
           .authorizeHttpRequests(a -> a.requestMatchers("/", "/api/v1/auth/register","/api/v1/auth/login","/api/v1/auth/csrf","/actuator/health","/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll().requestMatchers("/api/v1/admin/**").hasRole("ADMIN").anyRequest().authenticated())
