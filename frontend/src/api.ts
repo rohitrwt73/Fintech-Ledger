@@ -11,33 +11,26 @@ export const api = axios.create({
 
 let csrfToken: string | undefined;
 
-function getCsrfCookie(): string | undefined {
-  const cookie = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('XSRF-TOKEN='));
-
-  return cookie
-    ? decodeURIComponent(cookie.split('=').slice(1).join('='))
-    : undefined;
-}
-
 export async function refreshCsrfToken(): Promise<void> {
-  await api.get('/auth/csrf');
-  csrfToken = getCsrfCookie();
+  const response = await api.get<{ token: string }>('/auth/csrf');
+  csrfToken = response.data.token;
 }
 
 api.interceptors.request.use(async (config) => {
   const method = config.method?.toLowerCase();
 
-  if (method && method !== 'get' && method !== 'head' && method !== 'options') {
+  if (
+    method &&
+    method !== 'get' &&
+    method !== 'head' &&
+    method !== 'options'
+  ) {
     if (!csrfToken) {
       await refreshCsrfToken();
     }
 
-    const token = csrfToken ?? getCsrfCookie();
-
-    if (token) {
-      config.headers.set('X-XSRF-TOKEN', token);
+    if (csrfToken) {
+      config.headers.set('X-XSRF-TOKEN', csrfToken);
     }
   }
 
@@ -50,11 +43,7 @@ api.interceptors.response.use(
     if (error.response) {
       const data = error.response.data;
 
-      if (
-        data &&
-        typeof data === 'object' &&
-        !data.error
-      ) {
+      if (data && typeof data === 'object' && !data.error) {
         error.response.data = {
           ...data,
           error: `Request failed with HTTP ${error.response.status}`,
