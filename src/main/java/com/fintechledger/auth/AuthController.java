@@ -31,9 +31,9 @@ public class AuthController {
   var user=users.findByEmail(body.email().toLowerCase()).filter(u->encoder.matches(body.password(),u.getPasswordHash())).orElseThrow(()->new ApiException(HttpStatus.UNAUTHORIZED,"Invalid email or password"));
   setCookie(response,user.getEmail(),user.getRole()); return profile(user);
  }
- @PostMapping("/logout") Map<String,String> logout(HttpServletResponse response){response.addHeader("Set-Cookie",ResponseCookie.from("ledger_session","").httpOnly(true).secure(secure).sameSite("Strict").path("/").maxAge(0).build().toString());return Map.of("message","Logged out");}
+ @PostMapping("/logout") Map<String,String> logout(HttpServletResponse response){response.addHeader("Set-Cookie",ResponseCookie.from("ledger_session","").httpOnly(true).secure(secure).sameSite("None").path("/").maxAge(0).build().toString());return Map.of("message","Logged out");}
  @GetMapping("/csrf") Map<String,String> csrf(org.springframework.security.web.csrf.CsrfToken token){return Map.of("token",token.getToken());}
  @GetMapping("/me") Map<String,Object> me(org.springframework.security.core.Authentication auth){return users.findByEmail(auth.getName()).map(this::profile).orElseThrow(()->new ApiException(HttpStatus.UNAUTHORIZED,"Not authenticated"));}
- private void setCookie(HttpServletResponse response,String email,String role){var key=Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));response.addHeader("Set-Cookie",ResponseCookie.from("ledger_session",SecurityConfig.issue(key,email,role)).httpOnly(true).secure(secure).sameSite("Strict").path("/").maxAge(86400).build().toString());}
+ private void setCookie(HttpServletResponse response,String email,String role){var key=Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));response.addHeader("Set-Cookie",ResponseCookie.from("ledger_session",SecurityConfig.issue(key,email,role)).httpOnly(true).secure(secure).sameSite("None").path("/").maxAge(86400).build().toString());}
  private Map<String,Object> profile(AppUser u){return Map.of("id",u.getId(),"email",u.getEmail(),"fullName",u.getFullName(),"role",u.getRole());}
 }
