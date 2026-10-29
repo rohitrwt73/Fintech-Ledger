@@ -25,9 +25,8 @@ api.interceptors.request.use(async (config) => {
     method !== 'head' &&
     method !== 'options'
   ) {
-    if (!csrfToken) {
-      await refreshCsrfToken();
-    }
+
+    await refreshCsrfToken();
 
     if (csrfToken) {
       config.headers.set('X-XSRF-TOKEN', csrfToken);
